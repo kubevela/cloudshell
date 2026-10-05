@@ -9,9 +9,9 @@ fi
 
 if [ "$BUILDPLATFORM" == "linux/arm64" ] 
 then
-    curl -LO https://github.com/tsl0922/ttyd/releases/download/1.6.3/ttyd.arm \
-    && chmod +x ttyd.arm \
-    && mv ttyd.arm /usr/local/bin/ttyd
+    curl -LO https://github.com/tsl0922/ttyd/releases/download/1.6.3/ttyd.aarch64 \
+    && chmod +x ttyd.aarch64 \
+    && mv ttyd.aarch64 /usr/local/bin/ttyd
 fi
 
 which ttyd

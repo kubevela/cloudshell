@@ -21,7 +21,7 @@ if [ ! -d "vela" ]; then
 fi
 
 tar -zxf vela-$VERSION-$PLATFORM.tar.gz -C vela || exit 1
-mv vela/linux-amd64/vela /usr/local/bin/vela || exit 1
+mv vela/$PLATFORM/vela /usr/local/bin/vela || exit 1
 rm vela-$VERSION-$PLATFORM.tar.gz 
 rm -r vela
 vela version
