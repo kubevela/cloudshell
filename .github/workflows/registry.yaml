@@ -7,11 +7,22 @@ on:
       - "v*"
   workflow_dispatch: {}
 
+permissions:
+  contents: read
+
+env:
+  # The vela CLI baked into the image. Bump when the image should ship a newer
+  # CLI; it does not track the image tag.
+  VELA_VERSION: v1.11.0
+
 jobs:
   publish-images:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
     steps:
-      - uses: actions/checkout@master
+      - uses: actions/checkout@8ade135a41bc03ea155e62e844d188df1ea18608 # v4.1.1
       - name: Get the version
         id: get_version
         run: |
@@ -19,37 +30,29 @@ jobs:
           if [[ ${GITHUB_REF} == "refs/heads/main" ]]; then
             VERSION=latest
           fi
-          echo ::set-output name=VERSION::${VERSION}
+          echo "VERSION=${VERSION}" >> $GITHUB_OUTPUT
       - name: Get git revision
         id: vars
         shell: bash
         run: |
-          echo "::set-output name=git_revision::$(git rev-parse --short HEAD)"
+          echo "git_revision=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
       - name: Login ghcr.io
-        uses: docker/login-action@v1
+        uses: docker/login-action@74a5d142397b4f367a81961eba4e8cd7edddf772 # v3.4.0
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
       - name: Login docker.io
-        uses: docker/login-action@v1
+        uses: docker/login-action@74a5d142397b4f367a81961eba4e8cd7edddf772 # v3.4.0
         with:
           registry: docker.io
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
-      - name: Login KubeVela registry
-        uses: docker/login-action@v1
-        with:
-          registry: ${{ secrets.HUB_DOMAIN }}
-          username: ${{ secrets.HUB_USERNAME }}
-          password: ${{ secrets.HUB_PASSWORD }}
-      - uses: docker/setup-qemu-action@v1
-      - uses: docker/setup-buildx-action@v1
-        with:
-          driver-opts: image=moby/buildkit:master
+      - uses: docker/setup-qemu-action@29109295f81e9208d7d86ff1c6c12d2833863392 # v3.6.0
+      - uses: docker/setup-buildx-action@6524bf65af31da8d45b59e8c27de4bd072b392f5 # v3.8.0
 
-      - uses: docker/build-push-action@v2
-        name: Build & Pushing vela-core for Dockerhub, GHCR and ACR
+      - uses: docker/build-push-action@471d1dc4e07e5cdedd4c2171150001c434f0b7a4 # v6.15.0
+        name: Build & push cloudshell to Docker Hub and GHCR
         with:
           context: .
           file: Dockerfile
@@ -60,6 +63,7 @@ jobs:
           push: ${{ github.event_name != 'pull_request' }}
           build-args: |
             VERSION=${{ steps.get_version.outputs.VERSION }}
+            VELA_VERSION=${{ env.VELA_VERSION }}
           tags: |-
             docker.io/oamdev/cloudshell:${{ steps.get_version.outputs.VERSION }}
-            ${{ secrets.HUB_DOMAIN }}/oamdev/cloudshell:${{ steps.get_version.outputs.VERSION }}
+            ghcr.io/${{ github.repository_owner }}/oamdev/cloudshell:${{ steps.get_version.outputs.VERSION }}
