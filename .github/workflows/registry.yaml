@@ -31,10 +31,14 @@ jobs:
       - name: Get the version
         id: get_version
         run: |
-          VERSION=${GITHUB_REF#refs/tags/}
-          if [[ ${GITHUB_REF} == "refs/heads/main" ]]; then
-            VERSION=latest
-          fi
+          # Every branch of this has to produce a valid image tag, including the
+          # pull request refs, which are not pushed but are still tagged.
+          case "${GITHUB_REF}" in
+            refs/tags/*)     VERSION=${GITHUB_REF#refs/tags/} ;;
+            refs/heads/main) VERSION=latest ;;
+            refs/pull/*)     VERSION=pr-$(echo "${GITHUB_REF}" | cut -d/ -f3) ;;
+            *)               VERSION=$(echo "${GITHUB_REF#refs/heads/}" | tr '/' '-') ;;
+          esac
           echo "VERSION=${VERSION}" >> $GITHUB_OUTPUT
       - name: Get git revision
         id: vars
