@@ -5,6 +5,11 @@ on:
       - main
     tags:
       - "v*"
+  # Builds both platforms without pushing, so a change to the Dockerfile or the
+  # install scripts is checked before it reaches main.
+  pull_request:
+    branches:
+      - main
   workflow_dispatch: {}
 
 permissions:
@@ -36,13 +41,17 @@ jobs:
         shell: bash
         run: |
           echo "git_revision=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
+      # Skipped on pull requests: nothing is pushed there, and a fork's run has
+      # no access to the registry secrets.
       - name: Login ghcr.io
+        if: github.event_name != 'pull_request'
         uses: docker/login-action@74a5d142397b4f367a81961eba4e8cd7edddf772 # v3.4.0
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
       - name: Login docker.io
+        if: github.event_name != 'pull_request'
         uses: docker/login-action@74a5d142397b4f367a81961eba4e8cd7edddf772 # v3.4.0
         with:
           registry: docker.io
