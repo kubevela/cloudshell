@@ -1,27 +1,28 @@
 #!/bin/bash
 
-VERSION=${VERSION:-"v1.5.0-beta.6"}
-
-if [ "$VERSION" == "latest" ]
-then
-  VERSION="v1.5.0-beta.6"
-fi
+# The vela CLI baked into the image. Independent of the image tag: the image has
+# its own release cadence, the CLI follows KubeVela's.
+VELA_VERSION=${VELA_VERSION:-"v1.11.0"}
 
 PLATFORM=linux-amd64
 
-if [ "$BUILDPLATFORM" == "linux/arm64" ] 
+if [ "$BUILDPLATFORM" == "linux/arm64" ]
 then
     PLATFORM=linux-arm64
 fi
-echo "Download the binary from: https://github.com/kubevela/kubevela/releases/download/$VERSION/vela-$VERSION-$PLATFORM.tar.gz"
 
-curl -LO https://github.com/kubevela/kubevela/releases/download/$VERSION/vela-$VERSION-$PLATFORM.tar.gz
+ARCHIVE=vela-$VELA_VERSION-$PLATFORM.tar.gz
+URL=https://github.com/kubevela/kubevela/releases/download/$VELA_VERSION/$ARCHIVE
+echo "Download the binary from: $URL"
+
+# -f so a missing release fails here rather than unpacking an HTML error page.
+curl -fsSL -o "$ARCHIVE" "$URL" || exit 1
 if [ ! -d "vela" ]; then
   mkdir -p vela
 fi
 
-tar -zxf vela-$VERSION-$PLATFORM.tar.gz -C vela || exit 1
+tar -zxf "$ARCHIVE" -C vela || exit 1
 mv vela/$PLATFORM/vela /usr/local/bin/vela || exit 1
-rm vela-$VERSION-$PLATFORM.tar.gz 
+rm "$ARCHIVE"
 rm -r vela
 vela version
